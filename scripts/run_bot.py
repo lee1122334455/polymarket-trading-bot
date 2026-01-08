@@ -2,21 +2,31 @@
 """
 Run Script - Start the Trading Bot
 
-Simple script to start the trading bot with encrypted key decryption.
+Simple script to start the trading bot.
+
+Supports two modes:
+1. Environment Variables Mode (recommended for beginners):
+   - Set POLY_PRIVATE_KEY and POLY_SAFE_ADDRESS in .env file
+   - Run: python scripts/run_bot.py
+
+2. Encrypted Key Mode (more secure):
+   - Run setup first: python scripts/setup.py
+   - Creates encrypted key file and config.yaml
+   - Run: python scripts/run_bot.py
 
 Usage:
-    python scripts/run_bot.py
-
-The script will:
-1. Ask for the encryption password
-2. Initialize the bot
-3. Start an interactive session
+    python scripts/run_bot.py              # Quick demo
+    python scripts/run_bot.py --interactive # Interactive mode
 """
 
 import os
 import sys
 import asyncio
 from pathlib import Path
+
+# Auto-load .env file
+from dotenv import load_dotenv
+load_dotenv()
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -54,6 +64,27 @@ def print_error(msg: str) -> None:
     print(f"{Colors.RED}✗{Colors.RESET} {msg}")
 
 
+def check_env_mode() -> bool:
+    """Check if environment variables are set for direct mode."""
+    private_key = os.environ.get("POLY_PRIVATE_KEY")
+    safe_address = os.environ.get("POLY_SAFE_ADDRESS")
+    return bool(private_key and safe_address)
+
+
+def load_config_from_env() -> Config:
+    """Load configuration from environment variables."""
+    config = Config.from_env()
+    errors = config.validate()
+
+    if errors:
+        print_error("Configuration validation failed:")
+        for error in errors:
+            print(f"  - {error}")
+        sys.exit(1)
+
+    return config
+
+
 def load_config() -> Config:
     """Load configuration from config.yaml."""
     if not os.path.exists("config.yaml"):
@@ -76,6 +107,15 @@ def load_config() -> Config:
     except Exception as e:
         print_error(f"Failed to load config: {e}")
         sys.exit(1)
+
+
+def get_private_key_from_env() -> str:
+    """Get private key from environment variable."""
+    private_key = os.environ.get("POLY_PRIVATE_KEY")
+    if not private_key:
+        print_error("POLY_PRIVATE_KEY environment variable not set!")
+        sys.exit(1)
+    return private_key
 
 
 def decrypt_private_key() -> str:
@@ -124,7 +164,7 @@ def print_help() -> None:
     print("  price 0x123...")
 
 
-def print_status(bot: TradingBot) -> None:
+async def print_status(bot: TradingBot) -> None:
     """Print bot status."""
     config = bot.config
 
@@ -134,7 +174,7 @@ def print_status(bot: TradingBot) -> None:
     print(f"  Data Dir: {config.data_dir}")
 
     # Get open orders
-    orders = asyncio.run(bot.get_open_orders())
+    orders = await bot.get_open_orders()
     print(f"  Open Orders: {len(orders)}")
 
     if orders:
@@ -168,7 +208,7 @@ async def interactive_session(bot: TradingBot) -> None:
                 print_help()
 
             elif cmd == "status":
-                print_status(bot)
+                await print_status(bot)
 
             elif cmd == "cancel-all":
                 result = await bot.cancel_all_orders()
@@ -246,7 +286,7 @@ async def quick_demo(bot: TradingBot) -> None:
     print_header("Quick Demo")
 
     # Show status
-    print_status(bot)
+    await print_status(bot)
 
     # Get market price for default token
     if bot.config.default_token_id:
@@ -265,12 +305,26 @@ def main():
     """Main entry point."""
     print_header("Polymarket Trading Bot")
 
-    # Load configuration
-    config = load_config()
-    print_success(f"Configuration loaded (gasless: {config.use_gasless})")
+    # Check for environment variable mode
+    use_env_mode = check_env_mode()
 
-    # Decrypt private key
-    private_key = decrypt_private_key()
+    if use_env_mode:
+        # Environment variable mode
+        print_success("Using environment variables mode")
+        config = load_config_from_env()
+        private_key = get_private_key_from_env()
+        print_success(f"Configuration loaded (gasless: {config.use_gasless})")
+    else:
+        # Encrypted key mode (legacy)
+        print(f"{Colors.YELLOW}Environment variables not found, using encrypted key mode{Colors.RESET}")
+        print(f"  Tip: Set POLY_PRIVATE_KEY and POLY_SAFE_ADDRESS in .env for easier setup\n")
+
+        # Load configuration
+        config = load_config()
+        print_success(f"Configuration loaded (gasless: {config.use_gasless})")
+
+        # Decrypt private key
+        private_key = decrypt_private_key()
 
     # Initialize bot
     try:

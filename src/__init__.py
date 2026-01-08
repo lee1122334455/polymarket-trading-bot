@@ -35,6 +35,8 @@ from .signer import OrderSigner, Order
 from .client import ApiClient, ClobClient, RelayerClient
 from .crypto import KeyManager
 from .config import Config, BuilderConfig
+from .gamma_client import GammaClient
+from .websocket_client import MarketWebSocket, OrderbookManager, OrderbookSnapshot
 
 # Utility functions
 from .utils import (
@@ -61,6 +63,10 @@ __all__ = [
     "KeyManager",
     "Config",
     "BuilderConfig",
+    "GammaClient",
+    "MarketWebSocket",
+    "OrderbookManager",
+    "OrderbookSnapshot",
     # Utility functions
     "create_bot_from_env",
     "validate_address",

@@ -75,6 +75,10 @@ python strategies/flash_crash_strategy.py --coin ETH --drop 0.25 --size 10
 3. 当概率在10秒内下跌0.30+时，买入崩盘的一方
 4. 在 +$0.10（止盈）或 -$0.05（止损）时退出
 
+## 策略开发指南
+
+- 详见 `docs/strategy_guide_CN.md`（入门到可运行的完整步骤）
+
 ### 实时订单簿界面
 
 在终端中查看实时订单簿数据：

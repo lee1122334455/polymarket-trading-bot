@@ -75,6 +75,10 @@ python strategies/flash_crash_strategy.py --coin ETH --drop 0.25 --size 10
 3. When probability drops by 0.30+ in 10 seconds, buy the crashed side
 4. Exit at +$0.10 (take profit) or -$0.05 (stop loss)
 
+## Strategy Development Guide
+
+- See `docs/strategy_guide.md` for a step-by-step tutorial and templates.
+
 ### Real-time Orderbook TUI
 
 View live orderbook data in a beautiful terminal interface:
